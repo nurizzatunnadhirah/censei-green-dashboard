@@ -1,0 +1,41 @@
+.dashboard-card{
+    border:1px solid var(--cui-border-color);
+    border-radius:16px;
+    background:var(--cui-body-bg);
+    transition:all .25s ease;
+}
+
+.dashboard-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 .75rem 1.5rem rgba(0,0,0,.15);
+}
+
+.dashboard-card .card-header{
+    background:transparent;
+    border-bottom:1px solid var(--cui-border-color);
+    font-weight:600;
+}
+
+.dashboard-card i{
+    opacity:.85;
+}
+
+.kpi-organic {
+    background: #5856d6;
+    color: #fff;
+}
+
+.kpi-inorganic {
+    background: #619de2;
+    color: #fff;
+}
+
+.kpi-toxic {
+    background: #f9b115;
+    color: #fff;
+}
+
+.kpi-carbon {
+    background: #eb6868;
+    color: #fff;
+}
