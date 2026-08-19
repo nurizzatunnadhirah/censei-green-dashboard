@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ asset('css/vendors/simplebar.css') }}">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link href="{{ asset('css/dashboard.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('vendors/@coreui/icons/css/free.min.css') }}">
 </head>
 
 <body>
@@ -33,6 +34,7 @@
     <script src="{{ asset('js/color-modes.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
     @stack('scripts')
 

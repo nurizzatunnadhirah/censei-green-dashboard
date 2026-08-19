@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class WasteRecord extends Model
 {
     protected $fillable = [
-        'faculty_id',
+        'location_id',
         'waste_type_id',
         'recorded_by',
         'actual_weight',
@@ -17,19 +17,24 @@ class WasteRecord extends Model
         'collection_date',
         'recycled',
         'remarks',
+
+        'waste_stream',
+        'vehicle_no',
+        'time_in',
+        'time_out',
     ];
 
-    public function faculty(): BelongsTo
+    public function location(): BelongsTo
     {
-        return $this->belongsTo(Faculty::class);
-    }
+    return $this->belongsTo(Location::class);
+   }
 
     public function wasteType(): BelongsTo
     {
         return $this->belongsTo(WasteType::class);
     }
 
-    public function user(): BelongsTo
+    public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
     }

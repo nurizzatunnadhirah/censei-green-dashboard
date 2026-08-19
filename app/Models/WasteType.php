@@ -14,10 +14,13 @@ class WasteType extends Model
         'description',
     ];
 
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(WasteCategory::class);
-    }
+    public function category()
+{
+    return $this->belongsTo(
+        WasteCategory::class,
+        'category_id'
+    );
+}
 
     public function wasteRecords(): HasMany
     {

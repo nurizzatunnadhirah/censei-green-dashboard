@@ -12,8 +12,11 @@ class WasteCategory extends Model
         'description',
     ];
 
-    public function wasteTypes(): HasMany
-    {
-        return $this->hasMany(WasteType::class);
-    }
+    public function wasteTypes()
+{
+    return $this->hasMany(
+        WasteType::class,
+        'category_id'
+    );
+}
 }

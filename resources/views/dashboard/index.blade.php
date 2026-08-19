@@ -6,137 +6,225 @@
 
 <div class="container-lg">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    {{-- ========================================== --}}
+    {{-- HEADER --}}
+    {{-- ========================================== --}}
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
 
         <div>
-            <h2 class="fw-bold">Green Dashboard</h2>
-            <p class="text-body-secondary mb-0">
-                Welcome back, Admin.
-            </p>
+
+            <h5 class="fw-bold mb-1">
+                Welcome Back, Admin.
+            </h5>
+
+            <h5 class="mb-0">
+                {{ date('d M Y') }}
+            </h5>
+
         </div>
 
-        <div class="text-end">
-            <small class="text-body-secondary">Today</small>
-            <h5>{{ date('d M Y') }}</h5>
-        </div>
+
+        {{-- Filters --}}
+        <form
+            method="GET"
+            action="{{ route('dashboard') }}"
+            id="dashboardFilterForm"
+            class="d-flex align-items-center gap-3 flex-wrap">
+
+            {{-- Waste Stream --}}
+            <div class="d-flex align-items-center gap-2">
+
+                <label
+                    for="waste_stream"
+                    class="form-label mb-0">
+
+                    Waste Stream:
+
+                </label>
+
+                <select
+                    name="waste_stream"
+                    id="waste_stream"
+                    class="form-select"
+                    style="width: 150px;"
+                    onchange="
+                        document.getElementById('year').value = '';
+                        document.getElementById('dashboardFilterForm').submit();
+                    ">
+
+                    <option
+                        value="Overall"
+                        {{ $selectedStream === 'Overall' ? 'selected' : '' }}>
+
+                        Overall
+
+                    </option>
+
+                    <option
+                        value="Recycling"
+                        {{ $selectedStream === 'Recycling' ? 'selected' : '' }}>
+
+                        Recycling
+
+                    </option>
+
+                    <option
+                        value="Landfill"
+                        {{ $selectedStream === 'Landfill' ? 'selected' : '' }}>
+
+                        Landfill
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            {{-- Year --}}
+            <div class="d-flex align-items-center gap-2">
+
+                <label
+                    for="year"
+                    class="form-label mb-0">
+
+                    Year:
+
+                </label>
+
+                <select
+                    name="year"
+                    id="year"
+                    class="form-select"
+                    style="width: 140px;"
+                    onchange="this.form.submit()">
+
+                    <option value="">
+                        All Years
+                    </option>
+
+                    @foreach($availableYears as $availableYear)
+
+                        <option
+                            value="{{ $availableYear }}"
+                            {{ $selectedYear == $availableYear ? 'selected' : '' }}>
+
+                            {{ $availableYear }}
+
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+            </div>
+
+        </form>
 
     </div>
 
 
-    <div class="row g-4 mb-4">
+    {{-- ========================================== --}}
+    {{-- OVERALL KPI CARDS --}}
+    {{-- ========================================== --}}
 
-        <div class="col-md-6 col-xl-3">
+    @if($selectedStream === 'Overall')
 
-            <div class="card kpi-organic">
+        <div class="row g-4 mb-4">
 
-                <div class="card-body">
+            <div class="col-md-6 col-xl-3">
 
-                    <h6>Organic Waste</h6>
+                <div class="card kpi-organic">
 
-                    <h2 class="fw-bold">
-                        125 kg
-                    </h2>
+                    <div class="card-body">
 
-                    <small>
-                        ↑ 8% from last month
-                    </small>
+                        <h6>
+                            Total Waste
+                        </h6>
 
-                </div>
+                        <h2 class="fw-bold">
+                            {{ number_format($totalWaste, 2) }} kg
+                        </h2>
 
-            </div>
+                        <small>
+                            Recycling + Landfill
+                        </small>
 
-        </div>
-
-
-        <div class="col-md-6 col-xl-3">
-
-            <div class="card kpi-inorganic">
-
-                <div class="card-body">
-
-                    <h6>Inorganic Waste</h6>
-
-                    <h2 class="fw-bold">
-                        98 kg
-                    </h2>
-
-                    <small>
-                        ↓ 3% from last month
-                    </small>
+                    </div>
 
                 </div>
 
             </div>
 
-        </div>
 
+            <div class="col-md-6 col-xl-3">
 
-        <div class="col-md-6 col-xl-3">
+                <div class="card kpi-inorganic">
 
-            <div class="card kpi-toxic">
+                    <div class="card-body">
 
-                <div class="card-body">
+                        <h6>
+                            Recycling Waste
+                        </h6>
 
-                    <h6>Toxic Waste</h6>
+                        <h2 class="fw-bold">
+                            {{ number_format($recyclingTotal, 2) }} kg
+                        </h2>
 
-                    <h2 class="fw-bold">
-                        12 kg
-                    </h2>
+                        <small>
+                            Total recycling waste
+                        </small>
 
-                    <small>
-                        No change
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-6 col-xl-3">
-
-            <div class="card kpi-carbon">
-
-                <div class="card-body">
-
-                    <h6>Carbon Reduction</h6>
-
-                    <h2 class="fw-bold">
-                        3.2 t
-                    </h2>
-
-                    <small>
-                        Target 65%
-                    </small>
+                    </div>
 
                 </div>
 
             </div>
 
-        </div>
 
-    </div>
+            <div class="col-md-6 col-xl-3">
 
+                <div class="card kpi-toxic">
 
+                    <div class="card-body">
 
-    <div class="row g-4">
+                        <h6>
+                            Landfill Waste
+                        </h6>
 
-        <div class="col-lg-6">
+                        <h2 class="fw-bold">
+                            {{ number_format($landfillTotal, 2) }} kg
+                        </h2>
 
-            <div class="card">
+                        <small>
+                            Total waste to landfill
+                        </small>
 
-                <div class="card-header">
-
-                    Waste Distribution
+                    </div>
 
                 </div>
 
-                <div class="card-body">
+            </div>
 
-                    <div style="height:350px">
 
-                        <canvas id="wasteChart"></canvas>
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-carbon">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Total Records
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ number_format($totalRecords) }}
+                        </h2>
+
+                        <small>
+                            All waste records
+                        </small>
 
                     </div>
 
@@ -147,21 +235,106 @@
         </div>
 
 
-        <div class="col-lg-6">
+    {{-- ========================================== --}}
+    {{-- RECYCLING KPI CARDS --}}
+    {{-- ========================================== --}}
 
-            <div class="card">
+    @elseif($selectedStream === 'Recycling')
 
-                <div class="card-header">
+        <div class="row g-4 mb-4">
 
-                    Carbon Emission Trend
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-organic">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Total Recycling Waste
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ number_format($totalWaste, 2) }} kg
+                        </h2>
+
+                        <small>
+                            Selected period
+                        </small>
+
+                    </div>
 
                 </div>
 
-                <div class="card-body">
+            </div>
 
-                    <div style="height:350px">
 
-                        <canvas id="carbonChart"></canvas>
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-inorganic">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Total Records
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ number_format($totalRecords) }}
+                        </h2>
+
+                        <small>
+                            Recycling records
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-toxic">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Locations / Programs
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ $totalLocations }}
+                        </h2>
+
+                        <small>
+                            Active locations
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-carbon">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Waste Types
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ $totalWasteTypes }}
+                        </h2>
+
+                        <small>
+                            Waste types recorded
+                        </small>
 
                     </div>
 
@@ -171,246 +344,974 @@
 
         </div>
 
-    </div>
-<!-- Green Performance & Recent Activity -->
-<div class="row g-4 mt-1">
 
-    <!-- Green Performance -->
-    <div class="col-lg-8">
+    {{-- ========================================== --}}
+    {{-- LANDFILL KPI CARDS --}}
+    {{-- ========================================== --}}
 
-        <div class="card">
+    @else
 
-            <div class="card-header">
-                <strong>Green Performance</strong>
-            </div>
+        <div class="row g-4 mb-4">
 
-            <div class="card-body">
+            <div class="col-md-6 col-xl-3">
 
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between">
-                        <span>Recycling Rate</span>
-                        <strong>82%</strong>
+                <div class="card kpi-organic">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Total Landfill Waste
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ number_format($totalWaste, 2) }} kg
+                        </h2>
+
+                        <small>
+                            Selected period
+                        </small>
+
                     </div>
 
-                    <div class="progress mt-2" style="height:8px;">
-                        <div class="progress-bar bg-success"
-                             style="width:82%">
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-inorganic">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Collection Records
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ number_format($totalRecords) }}
+                        </h2>
+
+                        <small>
+                            Landfill collections
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-toxic">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Average Collection Weight
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ number_format($averageWeight, 2) }} kg
+                        </h2>
+
+                        <small>
+                            Average per collection
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-xl-3">
+
+                <div class="card kpi-carbon">
+
+                    <div class="card-body">
+
+                        <h6>
+                            Collection Vehicles
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            {{ $totalVehicles }}
+                        </h2>
+
+                        <small>
+                            Unique vehicle numbers
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
+
+
+    {{-- ========================================== --}}
+    {{-- OVERALL ANALYTICS --}}
+    {{-- ========================================== --}}
+
+    @if($selectedStream === 'Overall')
+
+        <div class="row g-4">
+
+            <div class="col-12">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        Recycling vs Landfill by Month
+                    </div>
+
+                    <div class="card-body">
+
+                        <div style="height: 380px;">
+
+                            <canvas id="overallStreamChart"></canvas>
+
                         </div>
-                    </div>
-                </div>
 
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between">
-                        <span>Carbon Reduction Target</span>
-                        <strong>65%</strong>
                     </div>
 
-                    <div class="progress mt-2" style="height:8px;">
-                        <div class="progress-bar"
-                             style="width:65%">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between">
-                        <span>Water Saving</span>
-                        <strong>91%</strong>
-                    </div>
-
-                    <div class="progress mt-2" style="height:8px;">
-                        <div class="progress-bar bg-info"
-                             style="width:91%">
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="d-flex justify-content-between">
-                        <span>Energy Efficiency</span>
-                        <strong>73%</strong>
-                    </div>
-
-                    <div class="progress mt-2" style="height:8px;">
-                        <div class="progress-bar bg-warning"
-                             style="width:73%">
-                        </div>
-                    </div>
                 </div>
 
             </div>
 
         </div>
 
-    </div>
 
+    {{-- ========================================== --}}
+    {{-- RECYCLING ANALYTICS --}}
+    {{-- ========================================== --}}
 
-    <!-- Recent Activity -->
-    <div class="col-lg-4">
+    @elseif($selectedStream === 'Recycling')
 
-        <div class="card">
+        <div class="row g-4">
 
-            <div class="card-header">
-                <strong>Recent Activity</strong>
+            {{-- Pie Chart --}}
+            <div class="col-lg-6">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        Waste Distribution by Type
+                    </div>
+
+                    <div class="card-body">
+
+                        <div style="height:350px">
+
+                            <canvas id="wasteChart"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="list-group list-group-flush">
 
-                <div class="list-group-item">
-                    ♻ Waste report uploaded
-                    <br>
-                    <small class="text-body-secondary">
-                        10 minutes ago
-                    </small>
-                </div>
+            {{-- Location Chart --}}
+            <div class="col-lg-6">
 
-                <div class="list-group-item">
-                    🌿 Carbon emission updated
-                    <br>
-                    <small class="text-body-secondary">
-                        1 hour ago
-                    </small>
-                </div>
+                <div class="card">
 
-                <div class="list-group-item">
-                    💧 Water usage imported
-                    <br>
-                    <small class="text-body-secondary">
-                        Yesterday
-                    </small>
-                </div>
+                    <div class="card-header">
+                        Waste by Location / Program
+                    </div>
 
-                <div class="list-group-item">
-                    📄 Monthly report generated
-                    <br>
-                    <small class="text-body-secondary">
-                        2 days ago
-                    </small>
+                    <div class="card-body">
+
+                        <div style="height:350px">
+
+                            <canvas id="locationChart"></canvas>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
             </div>
 
         </div>
 
-    </div>
+
+    {{-- ========================================== --}}
+    {{-- LANDFILL ANALYTICS --}}
+    {{-- ========================================== --}}
+
+    @else
+
+        <div class="row g-4">
+
+            {{-- Average Weight --}}
+            <div class="col-lg-6">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        Average Waste per Collection by Month
+                    </div>
+
+                    <div class="card-body">
+
+                        <div style="height:350px">
+
+                            <canvas id="averageCollectionChart"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- Collection Frequency --}}
+            <div class="col-lg-6">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        Monthly Collection Frequency
+                    </div>
+
+                    <div class="card-body">
+
+                        <div style="height:350px">
+
+                            <canvas id="collectionCountChart"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
+
+
+    {{-- ========================================== --}}
+    {{-- MONTHLY WASTE TREND --}}
+    {{-- ========================================== --}}
+
+    @if($selectedStream !== 'Overall')
+
+        <div class="row g-4 mt-1">
+
+            <div class="col-12">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        @if($selectedStream === 'Landfill')
+
+                            Monthly Landfill Waste Trend
+
+                        @else
+
+                            Monthly Recycling Waste Trend
+
+                        @endif
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div style="height:350px">
+
+                            <canvas id="monthlyWasteChart"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
 
 </div>
-<!-- Environmental Summary & Quick Actions -->
-<div class="row g-4 mt-1">
 
-    <!-- Environmental Summary -->
-    <div class="col-lg-8">
 
-        <div class="card">
+{{-- ========================================== --}}
+{{-- CHART DATA --}}
+{{-- ========================================== --}}
 
-            <div class="card-header">
-                <strong>Environmental Summary</strong>
-            </div>
+<script>
 
-            <div class="card-body">
+const selectedStream =
+    @json($selectedStream);
 
-                <div class="row text-center">
 
-                    <div class="col-md-3 mb-3">
-                        <h3 class="fw-bold text-success">235 kg</h3>
-                        <small class="text-body-secondary">Total Waste Collected</small>
-                    </div>
+@if($selectedStream === 'Overall')
 
-                    <div class="col-md-3 mb-3">
-                        <h3 class="fw-bold text-primary">74%</h3>
-                        <small class="text-body-secondary">Recycling Rate</small>
-                    </div>
+const overallMonthLabels =
+    @json($overallMonthly->pluck('month'));
 
-                    <div class="col-md-3 mb-3">
-                        <h3 class="fw-bold text-success">3.2 t</h3>
-                        <small class="text-body-secondary">CO₂ Reduction</small>
-                    </div>
+const overallRecyclingData =
+    @json($overallMonthly->pluck('recycling'));
 
-                    <div class="col-md-3 mb-3">
-                        <h3 class="fw-bold text-info">820 L</h3>
-                        <small class="text-body-secondary">Water Saved</small>
-                    </div>
+const overallLandfillData =
+    @json($overallMonthly->pluck('landfill'));
 
-                </div>
+@endif
 
-            </div>
 
-        </div>
+@if($selectedStream === 'Recycling')
 
-    </div>
+const wasteLabels =
+    @json($wasteByType->pluck('type_name'));
 
-    <!-- Quick Actions -->
-    <div class="col-lg-4">
+const wasteData =
+    @json($wasteByType->pluck('total_weight'));
 
-        <div class="card">
+const locationLabels =
+    @json($wasteByLocation->pluck('location_name'));
 
-            <div class="card-header">
-                <strong>Quick Actions</strong>
-            </div>
+const locationData =
+    @json($wasteByLocation->pluck('total_weight'));
 
-            <div class="card-body d-grid gap-2">
+@endif
 
-                <button class="btn btn-success">
-                    Upload Data
-                </button>
 
-                <button class="btn btn-primary">
-                    Generate Report
-                </button>
+@if($selectedStream === 'Landfill')
 
-                <button class="btn btn-outline-secondary">
-                    View Analytics
-                </button>
+const averageMonthLabels =
+    @json($monthlyAverageWeight->pluck('month'));
 
-                <button class="btn btn-outline-success">
-                    Export Dashboard
-                </button>
+const averageWeightData =
+    @json($monthlyAverageWeight->pluck('average_weight'));
 
-            </div>
+const collectionMonthLabels =
+    @json($monthlyCollections->pluck('month'));
 
-        </div>
+const collectionCountData =
+    @json($monthlyCollections->pluck('collection_count'));
 
-    </div>
+@endif
 
-</div>
-</div>
 
+@if($selectedStream !== 'Overall')
+
+const monthlyLabels =
+    @json($monthlyWaste->pluck('month'));
+
+const monthlyData =
+    @json($monthlyWaste->pluck('total_weight'));
+
+@endif
+
+</script>
 
 @endsection
+
 
 @push('scripts')
 
 <script>
 
-new Chart(document.getElementById('wasteChart'), {
-    type: 'pie',
-    data: {
-        labels: ['Organic','Inorganic','Toxic','Non-Recyclable'],
-        datasets: [{
-            data: [40,30,10,20]
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false
-    }
-});
+@if($selectedStream === 'Overall')
 
-new Chart(document.getElementById('carbonChart'), {
-    type: 'line',
-    data: {
-        labels:['Jan','Feb','Mar','Apr','May','Jun'],
-        datasets:[{
-            label:'Carbon Emission',
-            data:[90,82,74,68,61,55],
-            tension:.4
-        }]
-    },
-    options:{
-        responsive:true,
-        maintainAspectRatio:false
+/*
+|--------------------------------------------------------------------------
+| Overall Recycling vs Landfill
+|--------------------------------------------------------------------------
+*/
+
+const overallStreamChart = new Chart(
+    document.getElementById('overallStreamChart'),
+    {
+        type: 'line',
+
+        data: {
+
+            labels: overallMonthLabels,
+
+            datasets: [
+
+                {
+                    label: 'Recycling',
+
+                    data: overallRecyclingData,
+
+                    borderColor: '#4CAF50',
+
+                    backgroundColor: '#4CAF50',
+
+                    fill: false,
+
+                    tension: 0.3,
+
+                    borderWidth: 3,
+
+                    pointRadius: 4,
+
+                    pointHoverRadius: 7
+                },
+
+                {
+                    label: 'Waste to Landfill',
+
+                    data: overallLandfillData,
+
+                    borderColor: '#FF5722',
+
+                    backgroundColor: '#FF5722',
+
+                    fill: false,
+
+                    tension: 0.3,
+
+                    borderWidth: 3,
+
+                    pointRadius: 4,
+
+                    pointHoverRadius: 7
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+
+            plugins: {
+
+                legend: {
+                    position: 'bottom'
+                },
+
+                tooltip: {
+
+                    enabled: true,
+
+                    mode: 'index',
+
+                    intersect: false,
+
+                    callbacks: {
+
+                        label: function(context) {
+
+                            const value =
+                                Number(context.raw || 0);
+
+                            return context.dataset.label +
+                                ': ' +
+                                value.toLocaleString(
+                                    undefined,
+                                    {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    }
+                                ) +
+                                ' kg';
+
+                        }
+
+                    }
+
+                }
+
+            },
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    title: {
+                        display: true,
+                        text: 'Weight (kg)'
+                    }
+
+                },
+
+                x: {
+
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+
+                }
+
+            }
+
+        }
+
     }
-});
+);
+
+@endif
+
+
+@if($selectedStream === 'Recycling')
+
+/*
+|--------------------------------------------------------------------------
+| Recycling Pie Chart
+|--------------------------------------------------------------------------
+*/
+
+const wasteChart = new Chart(
+    document.getElementById('wasteChart'),
+    {
+        type: 'pie',
+
+        data: {
+
+            labels: wasteLabels,
+
+            datasets: [{
+
+                data: wasteData,
+
+                backgroundColor: [
+                    '#4CAF50',
+                    '#2196F3',
+                    '#FFC107',
+                    '#FF5722',
+                    '#9C27B0',
+                    '#795548',
+                    '#00BCD4',
+                    '#8BC34A',
+                    '#3F51B5',
+                    '#FF9800'
+                ],
+
+                borderWidth: 2
+
+            }]
+
+        },
+
+        plugins: [
+            ChartDataLabels
+        ],
+
+        options: {
+
+            responsive: true,
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    position: 'bottom'
+                },
+
+                datalabels: {
+
+                    color: '#ffffff',
+
+                    font: {
+                        weight: 'bold',
+                        size: 13
+                    },
+
+                    formatter: function(
+                        value,
+                        context
+                    ) {
+
+                        const data =
+                            context
+                                .chart
+                                .data
+                                .datasets[0]
+                                .data;
+
+                        const total =
+                            data.reduce(
+                                (
+                                    sum,
+                                    currentValue
+                                ) =>
+                                    sum +
+                                    Number(
+                                        currentValue
+                                    ),
+                                0
+                            );
+
+                        if (total === 0) {
+                            return '';
+                        }
+
+                        const percentage =
+                            Number(value)
+                            / total
+                            * 100;
+
+                        if (percentage < 10) {
+                            return '';
+                        }
+
+                        return percentage
+                            .toFixed(1)
+                            + '%';
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Recycling Location Chart
+|--------------------------------------------------------------------------
+*/
+
+const locationChart = new Chart(
+    document.getElementById('locationChart'),
+    {
+        type: 'bar',
+
+        data: {
+
+            labels: locationLabels,
+
+            datasets: [{
+
+                label: 'Waste Collected (kg)',
+
+                data: locationData,
+
+                backgroundColor:
+                    'rgba(32, 201, 151, 0.82)',
+
+                borderColor:
+                    'rgb(32, 201, 151)',
+
+                borderWidth: 1,
+
+                borderRadius: 6,
+
+                hoverBackgroundColor:
+                    'rgba(32, 201, 151, 1)'
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    title: {
+                        display: true,
+                        text: 'Weight (kg)'
+                    }
+
+                }
+
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                }
+
+            }
+
+        }
+
+    }
+);
+
+@endif
+
+
+@if($selectedStream === 'Landfill')
+
+/*
+|--------------------------------------------------------------------------
+| Average Waste per Collection
+|--------------------------------------------------------------------------
+*/
+
+const averageCollectionChart = new Chart(
+    document.getElementById(
+        'averageCollectionChart'
+    ),
+    {
+        type: 'bar',
+
+        data: {
+
+            labels: averageMonthLabels,
+
+            datasets: [{
+
+                label: 'Average Weight (kg)',
+
+                data: averageWeightData,
+
+                backgroundColor:
+                    'rgba(54, 162, 235, 0.82)',
+
+                borderColor:
+                    'rgb(54, 162, 235)',
+
+                borderWidth: 1,
+
+                borderRadius: 6,
+
+                hoverBackgroundColor:
+                    'rgba(54, 162, 235, 1)'
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    title: {
+                        display: true,
+                        text: 'Average Weight (kg)'
+                    }
+
+                }
+
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                }
+
+            }
+
+        }
+
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Monthly Collection Frequency
+|--------------------------------------------------------------------------
+*/
+
+const collectionCountChart = new Chart(
+    document.getElementById(
+        'collectionCountChart'
+    ),
+    {
+        type: 'bar',
+
+        data: {
+
+            labels: collectionMonthLabels,
+
+            datasets: [{
+
+                label: 'Collections',
+
+                data: collectionCountData,
+
+                backgroundColor:
+                    'rgba(255, 159, 64, 0.82)',
+
+                borderColor:
+                    'rgb(255, 159, 64)',
+
+                borderWidth: 1,
+
+                borderRadius: 6,
+
+                hoverBackgroundColor:
+                    'rgba(255, 159, 64, 1)'
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+                        precision: 0
+                    },
+
+                    title: {
+                        display: true,
+                        text: 'Number of Collections'
+                    }
+
+                }
+
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                }
+
+            }
+
+        }
+
+    }
+);
+
+@endif
+
+
+@if($selectedStream !== 'Overall')
+
+/*
+|--------------------------------------------------------------------------
+| Monthly Waste Trend
+|--------------------------------------------------------------------------
+*/
+
+const monthlyWasteChart = new Chart(
+    document.getElementById(
+        'monthlyWasteChart'
+    ),
+    {
+        type: 'line',
+
+        data: {
+
+            labels: monthlyLabels,
+
+            datasets: [{
+
+                label:
+                    selectedStream === 'Landfill'
+                        ? 'Landfill Waste (kg)'
+                        : 'Recycling Waste (kg)',
+
+                data: monthlyData,
+
+                fill: false,
+
+                tension: 0.3,
+
+                borderWidth: 3,
+
+                pointRadius: 4,
+
+                pointHoverRadius: 7
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+            maintainAspectRatio: false,
+
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+
+            plugins: {
+
+                legend: {
+                    display: true
+                },
+
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false
+                }
+
+            },
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    title: {
+                        display: true,
+                        text: 'Weight (kg)'
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+);
+
+@endif
 
 </script>
 

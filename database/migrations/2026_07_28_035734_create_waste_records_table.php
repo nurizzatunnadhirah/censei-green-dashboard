@@ -12,9 +12,9 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('faculty_id')
-                  ->constrained('faculties')
-                  ->cascadeOnDelete();
+           $table->foreignId('location_id')
+                 ->constrained('locations')
+                 ->cascadeOnDelete();
 
             $table->foreignId('waste_type_id')
                   ->constrained('waste_types')

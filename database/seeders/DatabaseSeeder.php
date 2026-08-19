@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         FacultySeeder::class,
         WasteCategorySeeder::class,
         WasteTypeSeeder::class,
+        LocationSeeder::class,
     ]);
 }
 }
