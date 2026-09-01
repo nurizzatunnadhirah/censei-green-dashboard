@@ -14,9 +14,9 @@
 
         <div>
 
-            <h5 class="fw-bold mb-1">
-                Welcome Back, Admin.
-            </h5>
+            <h4 class="fw-bold mb-0">
+                Welcome Back, {{ Auth::user()->name }}.
+            </h4>
 
             <h5 class="mb-0">
                 {{ date('d M Y') }}
