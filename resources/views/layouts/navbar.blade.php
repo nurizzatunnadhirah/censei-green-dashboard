@@ -126,120 +126,144 @@
             </li>
 
 
-            {{-- Account Dropdown --}}
-            <li class="nav-item dropdown">
 
-                <a
-                    class="nav-link py-0 pe-0"
-                    data-coreui-toggle="dropdown"
-                    href="#"
-                    role="button"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                >
+{{-- Account Dropdown / Login --}}
+@auth
 
-                    <div class="avatar avatar-md">
+    <li class="nav-item dropdown">
 
-                        @if(auth()->user()->profile_photo ?? false)
+        <a
+            class="nav-link py-0 pe-0"
+            data-coreui-toggle="dropdown"
+            href="#"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+        >
 
-                            <img
-                                class="avatar-img"
-                                src="{{ asset('storage/' . auth()->user()->profile_photo) }}"
-                                alt="{{ auth()->user()->name }}"
-                            >
+            <div class="avatar avatar-md">
 
-                        @else
+                @if(auth()->user()->profile_photo ?? false)
 
-                            <div
-                                class="avatar-img d-flex align-items-center justify-content-center bg-secondary text-white fw-semibold"
-                                style="
-                                    width: 100%;
-                                    height: 100%;
-                                    border-radius: 50%;
-                                    font-size: 0.9rem;
-                                "
-                            >
-                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                            </div>
+                    <img
+                        class="avatar-img"
+                        src="{{ asset('storage/' . auth()->user()->profile_photo) }}"
+                        alt="{{ auth()->user()->name }}"
+                    >
 
-                        @endif
+                @else
 
-                    </div>
-
-                </a>
-
-
-                <div class="dropdown-menu dropdown-menu-end pt-0">
-
-                    {{-- Account Header --}}
                     <div
-                        class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold rounded-top mb-2"
+                        class="avatar-img d-flex align-items-center justify-content-center bg-secondary text-white fw-semibold"
+                        style="
+                            width: 100%;
+                            height: 100%;
+                            border-radius: 50%;
+                            font-size: 0.9rem;
+                        "
                     >
-                        Account
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>
 
+                @endif
 
-                    {{-- Current User --}}
-                    <div class="px-3 py-2">
+            </div>
 
-                        <div class="fw-semibold">
-                            {{ auth()->user()->name }}
-                        </div>
-
-                        <div class="small text-body-secondary">
-                            {{ auth()->user()->email }}
-                        </div>
-
-                        <div class="small text-body-secondary">
-                            {{ auth()->user()->role ?? 'Staff' }}
-                        </div>
-
-                    </div>
+        </a>
 
 
-                    <div class="dropdown-divider"></div>
+        <div class="dropdown-menu dropdown-menu-end pt-0">
+
+            {{-- Account Header --}}
+            <div
+                class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold rounded-top mb-2"
+            >
+                Account
+            </div>
 
 
-                    {{-- Profile --}}
-                    <a
-                        class="dropdown-item"
-                        href="{{ route('profile.edit') }}"
-                    >
+            {{-- Current User --}}
+            <div class="px-3 py-2">
 
-                        <i class="icon me-2 cil-user"></i>
-
-                        Profile
-
-                    </a>
-
-
-                    <div class="dropdown-divider"></div>
-
-
-                    {{-- Logout --}}
-                    <form
-                        method="POST"
-                        action="{{ route('logout') }}"
-                    >
-
-                        @csrf
-
-                        <button
-                            type="submit"
-                            class="dropdown-item border-0 bg-transparent w-100 text-start"
-                        >
-
-                            <i class="icon me-2 cil-account-logout"></i>
-
-                            Logout
-
-                        </button>
-
-                    </form>
-
+                <div class="fw-semibold">
+                    {{ auth()->user()->name }}
                 </div>
 
-            </li>
+                <div class="small text-body-secondary">
+                    {{ auth()->user()->email }}
+                </div>
+
+                <div class="small text-body-secondary">
+                    {{ auth()->user()->role ?? 'Staff' }}
+                </div>
+
+            </div>
+
+
+            <div class="dropdown-divider"></div>
+
+
+            {{-- Profile --}}
+            <a
+                class="dropdown-item"
+                href="{{ route('profile.edit') }}"
+            >
+
+                <i class="icon me-2 cil-user"></i>
+
+                Profile
+
+            </a>
+
+
+            <div class="dropdown-divider"></div>
+
+
+            {{-- Logout --}}
+            <form
+                method="POST"
+                action="{{ route('logout') }}"
+            >
+
+                @csrf
+
+                <button
+                    type="submit"
+                    class="dropdown-item border-0 bg-transparent w-100 text-start"
+                >
+
+                    <i class="icon me-2 cil-account-logout"></i>
+
+                    Logout
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </li>
+
+@else
+
+    {{-- Public Visitor --}}
+    <li class="nav-item">
+
+        <a
+            href="{{ route('login') }}"
+            class="btn btn-primary px-3"
+        >
+
+            <i class="cil-account-login me-1"></i>
+
+            Login
+
+        </a>
+
+    </li>
+
+@endauth
+
 
         </ul>
 

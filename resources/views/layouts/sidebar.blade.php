@@ -116,19 +116,66 @@
     </div>
 
 
-    {{-- Sidebar Navigation --}}
-    <ul
-        class="sidebar-nav"
-        data-coreui="navigation"
-        data-simplebar
-    >
+{{-- Sidebar Navigation --}}
+<ul
+    class="sidebar-nav"
+    data-coreui="navigation"
+    data-simplebar
+>
+
+    {{-- ========================================== --}}
+    {{-- PUBLIC SIDEBAR --}}
+    {{-- ========================================== --}}
+
+    @guest
 
         {{-- Dashboard --}}
         <li class="nav-item">
 
             <a
-                class="nav-link {{ request()->routeIs('dashboard') || request()->is('/') ? 'active' : '' }}"
-                href="/"
+                class="nav-link {{ request()->routeIs('public.dashboard') ? 'active' : '' }}"
+                href="{{ route('public.dashboard') }}"
+            >
+
+                <svg
+                    class="nav-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                >
+
+                    <path
+                        fill="currentColor"
+                        d="M425.706 142.294A240 240 0 0 0 16 312v88h144v-32H48v-56c0-114.691 93.309-208 208-208s208 93.309 208 208v56H352v32h144v-88a238.43 238.43 0 0 0-70.294-169.706"
+                    />
+
+                    <path
+                        fill="currentColor"
+                        d="M80 264h32v32H80zm160-136h32v32h-32zm-104 40h32v32h-32zm264 96h32v32h-32zm-102.778 71.1 69.2-144.173-28.85-13.848-69.183 144.135a64.141 64.141 0 1 0 28.833 13.886M256 416a32 32 0 1 1 32-32 32.036 32.036 0 0 1-32 32"
+                    />
+
+                </svg>
+
+                Dashboard
+
+            </a>
+
+        </li>
+
+    @endguest
+
+
+    {{-- ========================================== --}}
+    {{-- AUTHENTICATED SIDEBAR --}}
+    {{-- ========================================== --}}
+
+    @auth
+
+        {{-- Dashboard --}}
+        <li class="nav-item">
+
+            <a
+                class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                href="{{ route('dashboard') }}"
             >
 
                 <svg
@@ -240,7 +287,6 @@
 
             </a>
 
-
             <ul class="nav-group-items compact">
 
                 {{-- Waste Types --}}
@@ -286,31 +332,28 @@
 
 
         {{-- User Management --}}
-        @auth
+        @if(auth()->user()->role === 'Admin')
 
-            @if(auth()->user()->role === 'Admin')
+            <li class="nav-item">
 
-                <li class="nav-item">
+                <a
+                    class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
+                    href="{{ route('users.index') }}"
+                >
 
-                    <a
-                        class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
-                        href="{{ route('users.index') }}"
-                    >
+                    <i class="nav-icon cil-people"></i>
 
-                        <i class="nav-icon cil-people"></i>
+                    User Management
 
-                        User Management
+                </a>
 
-                    </a>
+            </li>
 
-                </li>
+        @endif
 
-            @endif
+    @endauth
 
-        @endauth
-
-    </ul>
-
+</ul>
 
     {{-- Sidebar Footer --}}
     <div class="sidebar-footer border-top d-none d-md-flex">

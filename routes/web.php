@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\PublicDashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WasteCategoryController;
 use App\Http\Controllers\WasteTypeController;
@@ -19,11 +20,8 @@ use App\Http\Controllers\LandfillImportController;
 | Public Routes
 |--------------------------------------------------------------------------
 */
-
-Route::get('/', function () {
-    return view('welcome');
-});
-
+Route::get('/', [PublicDashboardController::class, 'index'])
+    ->name('public.dashboard');
 
 /*
 |--------------------------------------------------------------------------
