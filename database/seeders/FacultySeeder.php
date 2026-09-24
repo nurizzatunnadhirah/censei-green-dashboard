@@ -11,26 +11,53 @@ class FacultySeeder extends Seeder
     {
         $faculties = [
 
-            ['faculty_code' => 'FTMK', 'faculty_name' => 'Faculty of Information and Communication Technology'],
+            [
+                'faculty_code' => 'FTMK',
+                'faculty_name' => 'Faculty of Information and Communication Technology'
+            ],
 
-            ['faculty_code' => 'FKE', 'faculty_name' => 'Faculty of Electrical Engineering'],
+            [
+                'faculty_code' => 'FKE',
+                'faculty_name' => 'Faculty of Electrical Engineering'
+            ],
 
-            ['faculty_code' => 'FTK', 'faculty_name' => 'Faculty of Mechanical Engineering'],
+            [
+                'faculty_code' => 'FTK',
+                'faculty_name' => 'Faculty of Mechanical Engineering'
+            ],
 
-            ['faculty_code' => 'FKP', 'faculty_name' => 'Faculty of Manufacturing Engineering'],
+            [
+                'faculty_code' => 'FKP',
+                'faculty_name' => 'Faculty of Manufacturing Engineering'
+            ],
 
-            ['faculty_code' => 'FPTT', 'faculty_name' => 'Faculty of Engineering Technology'],
+            [
+                'faculty_code' => 'FPTT',
+                'faculty_name' => 'Faculty of Engineering Technology'
+            ],
 
-            ['faculty_code' => 'FKM', 'faculty_name' => 'Faculty of Technology Management and Technopreneurship'],
+            [
+                'faculty_code' => 'FKM',
+                'faculty_name' => 'Faculty of Technology Management and Technopreneurship'
+            ],
 
-            ['faculty_code' => 'PPP', 'faculty_name' => 'Centre for Language Learning'],
+            [
+                'faculty_code' => 'PPP',
+                'faculty_name' => 'Centre for Language Learning'
+            ],
 
-            ['faculty_code' => 'CENSEI', 'faculty_name' => 'Centre for Smart Environment'],
+            [
+                'faculty_code' => 'CENSEI',
+                'faculty_name' => 'Centre for Smart Environment'
+            ],
 
         ];
 
         foreach ($faculties as $faculty) {
-            Faculty::create($faculty);
+            Faculty::updateOrCreate(
+                ['faculty_code' => $faculty['faculty_code']],
+                ['faculty_name' => $faculty['faculty_name']]
+            );
         }
     }
 }

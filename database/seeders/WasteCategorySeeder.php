@@ -9,29 +9,30 @@ class WasteCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        WasteCategory::insert([
+        $categories = [
 
             [
                 'category_name' => 'Organic',
                 'description' => 'Biodegradable waste',
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             [
                 'category_name' => 'Inorganic',
                 'description' => 'Non-biodegradable waste',
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             [
                 'category_name' => 'Hazardous',
                 'description' => 'Scheduled and hazardous waste',
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
-        ]);
+        ];
+
+        foreach ($categories as $category) {
+            WasteCategory::updateOrCreate(
+                ['category_name' => $category['category_name']],
+                ['description' => $category['description']]
+            );
+        }
     }
 }
