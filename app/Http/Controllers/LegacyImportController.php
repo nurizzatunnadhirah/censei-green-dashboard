@@ -7,345 +7,177 @@ use App\Models\WasteType;
 use App\Models\WasteRecord;
 use App\Services\LegacyExcelParserService;
 use App\Services\LegacyImportValidationService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class LegacyImportController extends Controller
 {
-    private LegacyExcelParserService $parser;
-private LegacyImportValidationService $validator;
+    public function __construct(
+        private LegacyExcelParserService $parser,
+        private LegacyImportValidationService $validator
+    ) {}
 
-public function __construct(
-    LegacyExcelParserService $parser,
-    LegacyImportValidationService $validator
-) {
-    $this->parser = $parser;
-    $this->validator = $validator;
-}
+    public function index() { return view('legacy.index'); }
 
-    public function index()
+    private function workbook(string $path)
     {
-        return view('legacy.index');
+        if (!preg_match('~^legacy-imports/[A-Za-z0-9._-]+$~', $path) || !Storage::disk('local')->exists($path)) {
+            throw ValidationException::withMessages(['excel_file' => 'Temporary workbook not found. Upload it again.']);
+        }
+        return IOFactory::load(Storage::disk('local')->path($path));
     }
 
     public function upload(Request $request)
-{
-    $request->validate([
-        'excel_file' => 'required|mimes:xlsx,xls|max:10240',
-    ]);
-
-    // Explicitly store on Laravel's local disk
-    $path = $request->file('excel_file')
-        ->store('legacy-imports', 'local');
-
-    // Get the actual physical path from Laravel
-    $fullPath = Storage::disk('local')->path($path);
-
-    if (!Storage::disk('local')->exists($path)) {
-        return back()->withErrors([
-            'excel_file' => 'The uploaded file could not be stored.',
-        ]);
-    }
-
-    $spreadsheet = IOFactory::load($fullPath);
-
-    $sheetNames = [];
-
-    foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-
-        $sheetName = trim($sheet->getTitle());
-
-        if (!str_starts_with(
-            strtolower($sheetName),
-            'total'
-        )) {
-            continue;
-        }
-
-        $sheetNames[] = $sheetName;
-    }
-
-    if (empty($sheetNames)) {
-
-        Storage::disk('local')->delete($path);
-
-        return back()->withErrors([
-            'excel_file' =>
-                'No supported legacy worksheets were found.',
-        ]);
-    }
-
-    return view('legacy.select', [
-        'sheetNames' => $sheetNames,
-        'tempFile' => $path,
-    ]);
-}
-
-public function preview(Request $request)
-{
-    $request->validate([
-        'temp_file' => 'required|string',
-        'sheets' => 'required|array|min:1',
-        'sheets.*' => 'required|string',
-
-        'from_month' => 'nullable|date_format:Y-m',
-        'to_month' => 'nullable|date_format:Y-m|after_or_equal:from_month',
-    ]);
-
-    $path = $request->temp_file;
-
-if (!Storage::disk('local')->exists($path)) {
-
-    return redirect()
-        ->route('legacy.index')
-        ->withErrors([
-            'excel_file' =>
-                'The temporary Excel file could not be found. Please upload it again.',
-        ]);
-}
-
-$fullPath = Storage::disk('local')->path($path);
-
-$spreadsheet = IOFactory::load($fullPath);
-
-    if (!file_exists($fullPath)) {
-
-        return redirect()
-            ->route('legacy.index')
-            ->withErrors([
-                'excel_file' =>
-                    'The temporary Excel file could not be found. Please upload it again.',
+    {
+        $request->validate(['excel_file' => 'required|file|mimes:xlsx,xls|max:10240']);
+        $path = $request->file('excel_file')->store('legacy-imports', 'local');
+        try {
+            $spreadsheet = $this->workbook($path);
+            $sheetNames = [];
+            $detectedTypes = [];
+            foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+                $name = trim($sheet->getTitle());
+                if (!str_starts_with(strtolower($name), 'total')) continue;
+                $sheetNames[] = $name;
+                foreach ($this->parser->parseWorksheet($sheet) as $record) {
+                    $type = trim((string) ($record['waste_type'] ?? ''));
+                    if ($type !== '') $detectedTypes[md5($type)] = $type;
+                }
+            }
+            if (!$sheetNames) {
+                Storage::disk('local')->delete($path);
+                return back()->withErrors(['excel_file' => 'No supported legacy worksheets were found.']);
+            }
+            return view('legacy.select', [
+                'sheetNames' => $sheetNames,
+                'detectedTypes' => $detectedTypes,
+                'wasteTypes' => WasteType::orderBy('type_name')->get(),
+                'locations' => Location::orderBy('location_name')->get(),
+                'tempFile' => $path,
             ]);
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete($path);
+            if ($e instanceof ValidationException) throw $e;
+            return back()->withErrors(['excel_file' => 'Unable to read workbook: '.$e->getMessage()]);
+        }
     }
 
-    $spreadsheet = IOFactory::load($fullPath);
+    public function preview(Request $request)
+    {
+        $request->validate([
+            'temp_file' => 'required|string',
+            'sheets' => 'required|array|min:1',
+            'sheets.*' => 'required|string',
+            'from_month' => 'nullable|date_format:Y-m',
+            'to_month' => 'nullable|date_format:Y-m|after_or_equal:from_month',
+            'default_location_id' => 'nullable|integer|exists:locations,id',
+            'type_map' => 'nullable|array',
+            'type_map.*' => 'nullable|integer|exists:waste_types,id',
+        ]);
+        try { $spreadsheet = $this->workbook($request->temp_file); }
+        catch (ValidationException $e) { return redirect()->route('legacy.index')->withErrors($e->errors()); }
 
-    $allRecords = [];
-    $processedSheets = [];
+        $allRecords = [];
+        $processedSheets = [];
+        $wasteTypes = WasteType::all()->keyBy('id');
+        $defaultLocation = $request->filled('default_location_id')
+            ? Location::find($request->integer('default_location_id')) : null;
 
-    foreach ($request->sheets as $sheetName) {
-
-        $sheet = $spreadsheet->getSheetByName(
-            $sheetName
-        );
-
-        if (!$sheet) {
-            continue;
+        foreach ($request->sheets as $sheetName) {
+            if (!str_starts_with(strtolower(trim($sheetName)), 'total')) continue;
+            $sheet = $spreadsheet->getSheetByName($sheetName);
+            if (!$sheet) continue;
+            $records = $this->parser->parseWorksheet($sheet);
+            foreach ($records as &$record) {
+                if ($defaultLocation && ($record['location'] ?? '') === 'Unassigned (monthly summary)') {
+                    $record['location'] = $defaultLocation->location_name;
+                }
+                $key = md5(trim((string) ($record['waste_type'] ?? '')));
+                $mappedId = $request->input('type_map.'.$key);
+                if ($mappedId && ($type = $wasteTypes->get((int) $mappedId))) {
+                    $record['original_waste_type'] = $record['waste_type'];
+                    $record['waste_type'] = $type->type_name;
+                }
+            }
+            unset($record);
+            $records = array_values(array_filter($records, function ($record) use ($request) {
+                $month = substr((string) ($record['collection_date'] ?? ''), 0, 7);
+                return (!$request->filled('from_month') || $month >= $request->from_month)
+                    && (!$request->filled('to_month') || $month <= $request->to_month);
+            }));
+            $records = $this->validator->validate($records);
+            foreach ($records as &$record) $record['source_sheet'] = $sheetName;
+            unset($record);
+            $allRecords = array_merge($allRecords, $records);
+            $processedSheets[] = $sheetName;
         }
-
-        $records =
-            $this->parser->parseWorksheet($sheet);
-
-        /*
-         * Optional date range.
-         */
-        if ($request->filled('from_month')) {
-
-            $fromDate =
-                $request->from_month . '-01';
-
-            $records = array_filter(
-                $records,
-                fn ($record) =>
-                    $record['collection_date'] >= $fromDate
-            );
-        }
-
-        if ($request->filled('to_month')) {
-
-            $toDate =
-                $request->to_month . '-01';
-
-            $records = array_filter(
-                $records,
-                fn ($record) =>
-                    $record['collection_date'] <= $toDate
-            );
-        }
-
-        $records = array_values($records);
-
-        $records =
-            $this->validator->validate($records);
-
-        foreach ($records as &$record) {
-            $record['source_sheet'] =
-                $sheetName;
-        }
-
-        unset($record);
-
-        $allRecords = array_merge(
-            $allRecords,
-            $records
-        );
-
-        $processedSheets[] = $sheetName;
-    }
-
-    if (empty($allRecords)) {
-
-        return back()->withErrors([
-            'sheets' =>
-                'No records were found for the selected worksheets and month range.',
+        if (!$allRecords) return back()->withErrors(['sheets' => 'No records found for the selected worksheets and month range.']);
+        return view('legacy.preview', [
+            'records' => $allRecords,
+            'processedSheets' => $processedSheets,
+            'validCount' => collect($allRecords)->where('valid', true)->count(),
+            'invalidCount' => collect($allRecords)->where('valid', false)->count(),
+            'tempFile' => $request->temp_file,
         ]);
     }
 
-    $validCount = collect($allRecords)
-        ->where('valid', true)
-        ->count();
-
-    $invalidCount = collect($allRecords)
-        ->where('valid', false)
-        ->count();
-
-    return view('legacy.preview', [
-        'records' => $allRecords,
-        'processedSheets' => $processedSheets,
-        'validCount' => $validCount,
-        'invalidCount' => $invalidCount,
-        'tempFile' => $path,
-    ]);
-}
-public function import(Request $request)
-{
-    $records = $request->input('records', []);
-    $tempFile = $request->input('temp_file');
-
-    $imported = 0;
-    $skipped = 0;
-    $duplicates = 0;
-    $failed = 0;
-
-    $skipDetails = [];
-
-    DB::beginTransaction();
-
-    try {
-
-        foreach ($records as $record) {
-
-            /*
-             * Skip invalid records.
-             */
-            if (
-                empty($record['valid']) ||
-                empty($record['location_id']) ||
-                empty($record['waste_type_id']) ||
-                empty($record['collection_date'])
-            ) {
-                $skipped++;
-
-                $skipDetails[] = [
-                    'reason' => 'Invalid record',
-                    'location_id' => $record['location_id'] ?? null,
-                    'waste_type_id' => $record['waste_type_id'] ?? null,
-                    'collection_date' => $record['collection_date'] ?? null,
-                    'weight' => $record['weight'] ?? null,
-                ];
-
-                continue;
-            }
-
-            /*
-             * Duplicate check:
-             * location + waste type + collection date + weight
-             */
-            $alreadyExists = WasteRecord::where(
-                'location_id',
-                $record['location_id']
-            )
-                ->where(
-                    'waste_type_id',
-                    $record['waste_type_id']
-                )
-                ->whereDate(
-                    'collection_date',
-                    $record['collection_date']
-                )
-                ->where(
-                    'actual_weight',
-                    (float) $record['weight']
-                )
-                ->exists();
-
-            if ($alreadyExists) {
-
-                $duplicates++;
-                $skipped++;
-
-                $skipDetails[] = [
-                    'reason' => 'Duplicate record',
-                    'location_id' => $record['location_id'],
-                    'waste_type_id' => $record['waste_type_id'],
-                    'collection_date' => $record['collection_date'],
-                    'weight' => $record['weight'],
-                ];
-
-                continue;
-            }
-
-            try {
-
-                WasteRecord::create([
-                    
-                    'location_id' => $record['location_id'],
-                    'waste_type_id' => $record['waste_type_id'],
-                    'recorded_by' => Auth::id(),
-
-                    'actual_weight' => $record['weight'],
-
-                    'collection_date' => $record['collection_date'],
-
-                    'collection_method' => 'Legacy Excel Import',
-
-                    'waste_stream' => 'Recycling',
-
-                    'recycled' => true,
-
-                    'remarks' => 'Imported from CENSEi legacy Excel data',
-                ]);
-
-                $imported++;
-
-            } catch (\Throwable $e) {
-
-                $failed++;
-            }
-        }
-
-        DB::commit();
-
-        /*
-         * Delete the temporary Excel workbook
-         * only after the database transaction succeeds.
-         */
-        if (
-            $tempFile &&
-            Storage::disk('local')->exists($tempFile)
-        ) {
-            Storage::disk('local')->delete($tempFile);
-        }
-
-    } catch (\Throwable $e) {
-
-        DB::rollBack();
-
-        return back()->withErrors([
-            'import' => 'Import failed: ' . $e->getMessage(),
+    public function import(Request $request)
+    {
+        $request->validate([
+            'temp_file' => 'required|string',
+            'records' => 'required|array',
+            'records.*.location_id' => 'nullable|integer',
+            'records.*.waste_type_id' => 'nullable|integer',
+            'records.*.collection_date' => 'nullable|date',
+            'records.*.weight' => 'nullable|numeric',
         ]);
-    }
+        // Require the uploaded workbook still to exist; reject arbitrary import POSTs.
+        try { $this->workbook($request->temp_file); }
+        catch (ValidationException $e) { return redirect()->route('legacy.index')->withErrors($e->errors()); }
 
-    return view('legacy.summary', [
-        'total' => count($records),
-        'imported' => $imported,
-        'skipped' => $skipped,
-        'duplicates' => $duplicates,
-        'failed' => $failed,
-        'skipDetails' => $skipDetails,
-    ]);
-}
+        $records = $request->input('records', []);
+        $imported = $skipped = $duplicates = $failed = 0;
+        $skipDetails = [];
+        DB::beginTransaction();
+        try {
+            foreach ($records as $record) {
+                $locationId = $record['location_id'] ?? null;
+                $typeId = $record['waste_type_id'] ?? null;
+                $date = $record['collection_date'] ?? null;
+                $weight = $record['weight'] ?? null;
+                if (empty($record['valid']) || !$locationId || !$typeId || !$date || !is_numeric($weight) || (float)$weight <= 0
+                    || !Location::whereKey($locationId)->exists() || !WasteType::whereKey($typeId)->exists()) {
+                    $skipped++;
+                    $skipDetails[] = ['reason'=>'Invalid record', 'location_id'=>$locationId, 'waste_type_id'=>$typeId, 'collection_date'=>$date, 'weight'=>$weight];
+                    continue;
+                }
+                $exists = WasteRecord::where('location_id', $locationId)->where('waste_type_id', $typeId)
+                    ->whereDate('collection_date', $date)->where('actual_weight', (float)$weight)->exists();
+                if ($exists) {
+                    $duplicates++; $skipped++;
+                    $skipDetails[] = ['reason'=>'Duplicate record', 'location_id'=>$locationId, 'waste_type_id'=>$typeId, 'collection_date'=>$date, 'weight'=>$weight];
+                    continue;
+                }
+                try {
+                    WasteRecord::create([
+                        'location_id'=>$locationId, 'waste_type_id'=>$typeId, 'recorded_by'=>Auth::id(),
+                        'actual_weight'=>$weight, 'collection_date'=>$date,
+                        'collection_method'=>'Legacy Excel Import', 'waste_stream'=>'Recycling',
+                        'recycled'=>true, 'remarks'=>'Imported from CENSEi legacy Excel data',
+                    ]);
+                    $imported++;
+                } catch (\Throwable $e) { $failed++; }
+            }
+            DB::commit();
+            Storage::disk('local')->delete($request->temp_file);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withErrors(['import'=>'Import failed: '.$e->getMessage()]);
+        }
+        return view('legacy.summary', compact('imported','skipped','duplicates','failed','skipDetails') + ['total'=>count($records)]);
+    }
 }

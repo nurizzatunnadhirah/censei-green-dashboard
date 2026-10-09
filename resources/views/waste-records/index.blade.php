@@ -116,6 +116,37 @@
 
                 </div>
 
+{{-- Waste Category --}}
+<div class="col-md-3">
+
+    <label class="form-label">
+        Waste Category
+    </label>
+
+    <select
+        name="waste_category"
+        class="form-select">
+
+        <option value="">
+            All Waste Categories
+        </option>
+
+        @foreach($wasteCategories as $category)
+
+            <option
+                value="{{ $category->id }}"
+                {{ request('waste_category') == $category->id ? 'selected' : '' }}>
+
+                {{ $category->category_name }}
+
+            </option>
+
+        @endforeach
+
+    </select>
+
+</div>
+
                 <div class="col-md-3">
 
     <label class="form-label">
@@ -292,14 +323,14 @@
 
                                 <td class="text-center">
 
-                                    <a
+                                    {{--<a
                                         href="{{ route('waste-records.edit', $record) }}"
                                         class="btn btn-sm btn-primary"
                                         title="Edit">
 
                                         <i class="cil-pencil"></i>
 
-                                    </a>
+                                    </a>--}}
 
                                     <form
                                         action="{{ route('waste-records.destroy', $record) }}"
@@ -579,15 +610,22 @@
 
                     <td class="text-center">
 
-                        <a
-                            href="{{ route('waste-records.edit', $record) }}"
-                            class="btn btn-sm btn-primary"
-                            title="Edit">
+                        {{-- Edit button only for Recycling records --}}
+                        @if($record->waste_stream !== 'Landfill')
 
-                            <i class="cil-pencil"></i>
+                            <a
+                                href="{{ route('waste-records.edit', $record) }}"
+                                class="btn btn-sm btn-primary"
+                                title="Edit">
 
-                        </a>
+                                <i class="cil-pencil"></i>
 
+                            </a>
+
+                        @endif
+
+
+                        {{-- Delete button --}}
                         <form
                             action="{{ route('waste-records.destroy', $record) }}"
                             method="POST"

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Add Waste Record')
+@section('title', 'Edit Waste Record')
 
 @section('content')
 
@@ -13,75 +13,61 @@
         </div>
 
         <div class="card-body">
-            
-        @if ($errors->any())
 
-    <div class="alert alert-danger">
+            @if ($errors->any())
 
-        <strong>Please correct the following errors:</strong>
+                <div class="alert alert-danger">
 
-        <ul class="mb-0 mt-2">
+                    <strong>
+                        Please correct the following errors:
+                    </strong>
 
-            @foreach ($errors->all() as $error)
+                    <ul class="mb-0 mt-2">
 
-                <li>{{ $error }}</li>
+                        @foreach ($errors->all() as $error)
 
-            @endforeach
+                            <li>{{ $error }}</li>
 
-        </ul>
+                        @endforeach
 
-    </div>
+                    </ul>
 
-@endif
+                </div>
 
-            <form action="{{ route('waste-records.update', $wasteRecord) }}"
-            method="POST">
+            @endif
+
+
+            <form
+                action="{{ route('waste-records.update', $wasteRecord) }}"
+                method="POST">
 
                 @csrf
                 @method('PUT')
 
+
+                {{-- Location --}}
                 <div class="mb-3">
 
                     <label class="form-label">
-    Location / Program
-</label>
-
-<select name="location_id" class="form-select">
-
-    <option value="">
-        Select Location / Program
-    </option>
-
-    @foreach($locations as $location)
-
-        <option value="{{ $location->id }}"
-            {{ old('location_id', $wasteRecord->location_id) == $location->id ? 'selected' : '' }}>
-            {{ $location->location_name }}
-        </option>
-
-    @endforeach
-
-</select>
-
-                </div>
-
-                <div class="mb-3">
-
-                    <label class="form-label">
-                        Waste Type
+                        Location / Program
                     </label>
 
-                    <select name="waste_type_id" class="form-select">
+                    <select
+                        name="location_id"
+                        class="form-select">
 
                         <option value="">
-                            Select Waste Type
+                            Select Location / Program
                         </option>
 
-                        @foreach($wasteTypes as $type)
+                        @foreach($locations as $location)
 
-                            <option value="{{ $type->id }}"
-                                {{ old('waste_type_id', $wasteRecord->waste_type_id) == $type->id ? 'selected' : '' }}>
-                                {{ $type->type_name }}
+                            <option
+                                value="{{ $location->id }}"
+                                {{ old('location_id', $wasteRecord->location_id) == $location->id ? 'selected' : '' }}>
+
+                                {{ $location->location_name }}
+
                             </option>
 
                         @endforeach
@@ -90,6 +76,40 @@
 
                 </div>
 
+
+                {{-- Waste Type --}}
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Waste Type
+                    </label>
+
+                    <select
+                        name="waste_type_id"
+                        class="form-select">
+
+                        <option value="">
+                            Select Waste Type
+                        </option>
+
+                        @foreach($wasteTypes as $type)
+
+                            <option
+                                value="{{ $type->id }}"
+                                {{ old('waste_type_id', $wasteRecord->waste_type_id) == $type->id ? 'selected' : '' }}>
+
+                                {{ $type->type_name }}
+
+                            </option>
+
+                        @endforeach
+
+                    </select>
+
+                </div>
+
+
+                {{-- Weight --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -105,6 +125,8 @@
 
                 </div>
 
+
+                {{-- Collection Date --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -119,6 +141,8 @@
 
                 </div>
 
+
+                {{-- Collection Method --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -130,8 +154,11 @@
                         name="collection_method"
                         class="form-control"
                         value="{{ old('collection_method', $wasteRecord->collection_method) }}">
+
                 </div>
 
+
+                {{-- Remarks --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -145,12 +172,18 @@
 
                 </div>
 
-                <button class="btn btn-success">
+
+                <button
+                    type="submit"
+                    class="btn btn-success">
+
                     Save Record
+
                 </button>
 
-                <a href="{{ route('waste-records.index') }}"
-                   class="btn btn-secondary">
+                <a
+                    href="{{ route('waste-records.index') }}"
+                    class="btn btn-secondary">
 
                     Cancel
 

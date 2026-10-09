@@ -9,154 +9,107 @@ class LegacyExcelParserService
 {
     public function parseWorksheet(Worksheet $sheet): array
     {
-        $rows = $sheet->toArray();
+        $rows = $sheet->toArray(null, true, true, false);
+        foreach ($rows as $index => $row) {
+            if ($this->isSummaryHeader($row)) {
+                return $this->parseSummary($rows, $index);
+            }
+        }
+        return $this->parseSectioned($rows);
+    }
 
+    private function isSummaryHeader(array $row): bool
+    {
+        return preg_match('/organik|organic/i', trim((string)($row[0] ?? '')))
+            && preg_match('/jenis|type/i', trim((string)($row[1] ?? '')))
+            && preg_match('/total/i', trim((string)($row[2] ?? '')));
+    }
+
+    private function month(string $value): ?string
+    {
+        $value = trim($value);
+        if (!preg_match('/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[-\s](\d{2}|\d{4})$/i', $value, $matches)) {
+            return null;
+        }
+        $name = strtolower($matches[1]) === 'sept' ? 'Sep' : ucfirst(strtolower($matches[1]));
+        $year = (int)$matches[2];
+        $year = $year < 100 ? 2000 + $year : $year;
+        try {
+            return Carbon::createFromFormat('!M-Y', "$name-$year")->format('Y-m-01');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function weight($value): ?float
+    {
+        if ($value === null || trim((string)$value) === '') return null;
+        $value = str_replace([',', ' '], '', (string)$value);
+        return is_numeric($value) && (float)$value > 0 ? (float)$value : null;
+    }
+
+    private function parseSummary(array $rows, int $headerIndex): array
+    {
+        $columns = [];
+        foreach ($rows[$headerIndex] as $column => $value) {
+            if ($column < 3) continue;
+            $month = $this->month((string)($value ?? ''));
+            if ($month && !in_array($month, $columns, true)) $columns[$column] = $month;
+        }
         $records = [];
+        for ($i = $headerIndex + 1; $i < count($rows); $i++) {
+            $category = trim((string)($rows[$i][0] ?? ''));
+            $type = trim((string)($rows[$i][1] ?? ''));
+            if ($category === '' || $type === '') continue;
+            foreach ($columns as $column => $date) {
+                $weight = $this->weight($rows[$i][$column] ?? null);
+                if ($weight === null) continue;
+                $records[] = [
+                    'location' => 'Unassigned (monthly summary)',
+                    'waste_type' => $type,
+                    'collection_date' => $date,
+                    'weight' => $weight,
+                    'source_category' => $category,
+                ];
+            }
+        }
+        return $records;
+    }
 
+    private function parseSectioned(array $rows): array
+    {
+        $records = [];
         foreach ($rows as $rowNumber => $row) {
-            $heading = trim((string) ($row[0] ?? ''));
-
-            if ($heading === '') {
-                continue;
-            }
-
-            /*
-             * The row immediately after a waste-type heading
-             * should contain the month columns.
-             */
+            $heading = trim((string)($row[0] ?? ''));
+            if ($heading === '') continue;
             $monthRow = $rows[$rowNumber + 1] ?? [];
-
             $monthColumns = [];
-            $detectedMonths = [];
-
+            $detected = [];
             foreach ($monthRow as $column => $header) {
-                if ($column === 0) {
-                    continue;
-                }
-
-                $header = trim((string) $header);
-
-                /*
-                 * Accept month formats such as:
-                 *
-                 * Nov-24
-                 * Jan-25
-                 * Sept-25
-                 */
-                if (!preg_match(
-                    '/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)-\d{2}$/i',
-                    $header
-                )) {
-                    continue;
-                }
-
-                /*
-                 * Carbon accepts Sep rather than Sept.
-                 */
-                $normalisedMonth = preg_replace(
-                    '/^Sept-/i',
-                    'Sep-',
-                    $header
-                );
-
-                $normalisedMonth = ucfirst(
-                    strtolower($normalisedMonth)
-                );
-
-                /*
-                 * Ignore duplicate month headings.
-                 *
-                 * This is needed because the WCO table has
-                 * another Oct-25 heading in its total column.
-                 */
-                if (in_array($normalisedMonth, $detectedMonths, true)) {
-                    continue;
-                }
-
-                $detectedMonths[] = $normalisedMonth;
-                $monthColumns[$column] = $normalisedMonth;
+                if ($column === 0) continue;
+                $month = $this->month((string)($header ?? ''));
+                if ($month === null || in_array($month, $detected, true)) continue;
+                $detected[] = $month;
+                $monthColumns[$column] = $month;
             }
-
-            /*
-             * A valid waste-type section must be followed by
-             * several month headings.
-             */
-            if (count($monthColumns) < 3) {
-                continue;
-            }
-
-            /*
-             * Remove "(kg)" from headings such as Paper (kg).
-             *
-             * Headings without "(kg)", such as Fabric and eWaste,
-             * remain unchanged.
-             */
-            $wasteType = trim(
-                preg_replace('/\s*\(kg\)\s*$/i', '', $heading)
-            );
-
-            /*
-             * Location data begins two rows below the heading.
-             */
+            if (count($monthColumns) < 3) continue;
+            $wasteType = trim(preg_replace('/\s*\(kg\)\s*$/i', '', $heading));
             for ($i = $rowNumber + 2; $i < count($rows); $i++) {
-                $location = trim(
-                    (string) ($rows[$i][0] ?? '')
-                );
-
-                /*
-                 * The Total row marks the end of the section.
-                 */
-                if (strcasecmp($location, 'Total') === 0) {
-                    break;
-                }
-
-                if ($location === '') {
-                    continue;
-                }
-
-                foreach ($monthColumns as $column => $month) {
-                    $rawWeight = $rows[$i][$column] ?? null;
-
-                    if ($rawWeight === null || $rawWeight === '') {
-                        continue;
-                    }
-
-                    $cleanWeight = str_replace(
-                        [',', ' '],
-                        '',
-                        (string) $rawWeight
-                    );
-
-                    if (!is_numeric($cleanWeight)) {
-                        continue;
-                    }
-
-                    $weight = (float) $cleanWeight;
-
-                    /*
-                     * Ignore zero or negative values.
-                     */
-                    if ($weight <= 0) {
-                        continue;
-                    }
-
-                    $collectionDate = Carbon::createFromFormat(
-                        'M-y',
-                        $month
-                    )
-                        ->startOfMonth()
-                        ->format('Y-m-d');
-
+                $location = trim((string)($rows[$i][0] ?? ''));
+                if (strcasecmp($location, 'Total') === 0) break;
+                if ($location === '') continue;
+                foreach ($monthColumns as $column => $date) {
+                    $weight = $this->weight($rows[$i][$column] ?? null);
+                    if ($weight === null) continue;
                     $records[] = [
                         'location' => $location,
                         'waste_type' => $wasteType,
-                        'collection_date' => $collectionDate,
+                        'collection_date' => $date,
                         'weight' => $weight,
                     ];
                 }
             }
         }
-
         return $records;
     }
 }

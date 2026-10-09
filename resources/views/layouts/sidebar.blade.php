@@ -273,7 +273,7 @@
 
         {{-- Data Management --}}
         <li
-            class="nav-group {{ request()->routeIs('waste-types.*', 'waste-categories.*') ? 'show' : '' }}"
+            class="nav-group {{ request()->routeIs('waste-types.*', 'waste-categories.*', 'locations.*') ? 'show' : '' }}"
         >
 
             <a
@@ -325,6 +325,16 @@
                     </a>
 
                 </li>
+
+                {{-- Locations / Programs: insert inside Data Management <ul class="nav-group-items compact"> --}}
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('locations.*') ? 'active' : '' }}"
+       href="{{ route('locations.index') }}">
+        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+        Locations / Programs
+    </a>
+</li>
+
 
             </ul>
 

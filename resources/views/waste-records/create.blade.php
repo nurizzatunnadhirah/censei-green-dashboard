@@ -13,75 +13,61 @@
         </div>
 
         <div class="card-body">
-            
-        @if ($errors->any())
 
-    <div class="alert alert-danger">
+            @if ($errors->any())
 
-        <strong>Please correct the following errors:</strong>
+                <div class="alert alert-danger">
 
-        <ul class="mb-0 mt-2">
+                    <strong>
+                        Please correct the following errors:
+                    </strong>
 
-            @foreach ($errors->all() as $error)
+                    <ul class="mb-0 mt-2">
 
-                <li>{{ $error }}</li>
+                        @foreach ($errors->all() as $error)
 
-            @endforeach
+                            <li>{{ $error }}</li>
 
-        </ul>
+                        @endforeach
 
-    </div>
-
-@endif
-
-            <form action="{{ route('waste-records.store') }}"
-            method="POST"
-            enctype="multipart/form-data">
-
-                @csrf
-
-                <div class="mb-3">
-
-                    <label class="form-label">
-    Location / Program
-</label>
-
-<select name="location_id" class="form-select">
-
-    <option value="">
-        Select Location / Program
-    </option>
-
-    @foreach($locations as $location)
-
-        <option value="{{ $location->id }}"
-          {{ old('location_id') == $location->id ? 'selected' : '' }}>
-            {{ $location->location_name }}
-        </option>
-
-    @endforeach
-
-</select>
+                    </ul>
 
                 </div>
 
+            @endif
+
+
+            <form
+                action="{{ route('waste-records.store') }}"
+                method="POST"
+                enctype="multipart/form-data">
+
+                @csrf
+
+
+                {{-- Location --}}
                 <div class="mb-3">
 
                     <label class="form-label">
-                        Waste Type
+                        Location / Program
                     </label>
 
-                    <select name="waste_type_id" class="form-select">
+                    <select
+                        name="location_id"
+                        class="form-select">
 
                         <option value="">
-                            Select Waste Type
+                            Select Location / Program
                         </option>
 
-                        @foreach($wasteTypes as $type)
+                        @foreach($locations as $location)
 
-                            <option value="{{ $type->id }}"
-                             {{ old('waste_type_id') == $type->id ? 'selected' : '' }}>
-                                {{ $type->type_name }}
+                            <option
+                                value="{{ $location->id }}"
+                                {{ old('location_id') == $location->id ? 'selected' : '' }}>
+
+                                {{ $location->location_name }}
+
                             </option>
 
                         @endforeach
@@ -90,6 +76,40 @@
 
                 </div>
 
+
+                {{-- Waste Type --}}
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Waste Type
+                    </label>
+
+                    <select
+                        name="waste_type_id"
+                        class="form-select">
+
+                        <option value="">
+                            Select Waste Type
+                        </option>
+
+                        @foreach($wasteTypes as $type)
+
+                            <option
+                                value="{{ $type->id }}"
+                                {{ old('waste_type_id') == $type->id ? 'selected' : '' }}>
+
+                                {{ $type->type_name }}
+
+                            </option>
+
+                        @endforeach
+
+                    </select>
+
+                </div>
+
+
+                {{-- Weight --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -105,6 +125,8 @@
 
                 </div>
 
+
+                {{-- Collection Date --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -119,6 +141,8 @@
 
                 </div>
 
+
+                {{-- Collection Method --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -130,8 +154,11 @@
                         name="collection_method"
                         class="form-control"
                         value="{{ old('collection_method') }}">
+
                 </div>
 
+
+                {{-- Remarks --}}
                 <div class="mb-3">
 
                     <label class="form-label">
@@ -145,35 +172,46 @@
 
                 </div>
 
+
+                {{-- Supporting File --}}
                 <div class="mb-3">
 
-    <label class="form-label">
-        Supporting File
-    </label>
+                    <label class="form-label">
+                        Supporting File
+                    </label>
 
-    <input
-        type="file"
-        name="attachment"
-        class="form-control"
-        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
+                    <input
+                        type="file"
+                        name="attachment"
+                        class="form-control"
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
 
-    <small class="text-muted">
-        Accepted formats: JPG, JPEG, PNG, PDF, DOC, DOCX, XLS, XLSX (Maximum 5 MB)
-    </small>
+                    <small class="text-muted">
+                        Accepted formats: JPG, JPEG, PNG, PDF, DOC, DOCX, XLS, XLSX (Maximum 5 MB)
+                    </small>
 
-    @error('attachment')
-        <div class="text-danger mt-1">
-            {{ $message }}
-        </div>
-    @enderror
+                    @error('attachment')
 
-</div>
-                <button class="btn btn-success">
+                        <div class="text-danger mt-1">
+                            {{ $message }}
+                        </div>
+
+                    @enderror
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn btn-success">
+
                     Save Record
+
                 </button>
 
-                <a href="{{ route('waste-records.index') }}"
-                   class="btn btn-secondary">
+                <a
+                    href="{{ route('waste-records.index') }}"
+                    class="btn btn-secondary">
 
                     Cancel
 

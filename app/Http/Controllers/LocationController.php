@@ -3,68 +3,68 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
+use App\Models\WasteRecord;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class LocationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $locations = Location::orderBy('location_name')
-            ->paginate(10);
+        $search = trim((string) $request->query('search', ''));
 
-        return view('locations.index', compact('locations'));
+        $locations = Location::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where('location_name', 'like', '%' . $search . '%');
+            })
+            ->orderBy('location_name')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('locations.index', compact('locations', 'search'));
     }
-
 
     public function store(Request $request)
     {
-        $request->validate([
-            'location_name' => 'required|string|max:255|unique:locations,location_name',
+        $validated = $request->validate([
+            'location_name' => ['required', 'string', 'max:255', Rule::unique('locations', 'location_name')],
         ]);
 
-        Location::create([
-            'location_name' => $request->location_name,
-        ]);
+        Location::create(['location_name' => trim($validated['location_name'])]);
 
-        return redirect()
-            ->route('locations.index')
+        return redirect()->route('locations.index')
             ->with('success', 'Location / Program added successfully.');
     }
 
-
     public function update(Request $request, Location $location)
     {
-        $request->validate([
-            'location_name' =>
-                'required|string|max:255|unique:locations,location_name,' . $location->id,
+        $validated = $request->validate([
+            'location_name' => ['required', 'string', 'max:255', Rule::unique('locations', 'location_name')->ignore($location->id)],
         ]);
 
-        $location->update([
-            'location_name' => $request->location_name,
-        ]);
+        $location->update(['location_name' => trim($validated['location_name'])]);
 
-        return redirect()
-            ->route('locations.index')
+        return redirect()->route('locations.index', $request->only('search', 'page'))
             ->with('success', 'Location / Program updated successfully.');
     }
 
-
-    public function destroy(Location $location)
+    public function destroy(Request $request, Location $location)
     {
-        if ($location->wasteRecords()->exists()) {
-
-            return redirect()
-                ->route('locations.index')
-                ->with(
-                    'error',
-                    'This location cannot be deleted because it is already used by waste records.'
-                );
+        // Protect against deleting a location referenced by existing waste records.
+        // A database foreign key should also restrict deletion for additional safety.
+        if (WasteRecord::where('location_id', $location->id)->exists()) {
+            return redirect()->route('locations.index', $request->only('search', 'page'))
+                ->with('error', 'This location cannot be deleted because it is used by waste records.');
         }
 
-        $location->delete();
+        try {
+            $location->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('locations.index', $request->only('search', 'page'))
+                ->with('error', 'This location cannot be deleted because it is referenced by existing data.');
+        }
 
-        return redirect()
-            ->route('locations.index')
+        return redirect()->route('locations.index', $request->only('search', 'page'))
             ->with('success', 'Location / Program deleted successfully.');
     }
 }
